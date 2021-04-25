@@ -4,6 +4,8 @@ from conll import read_corpus_conll
 from spacy.tokens import Doc
 
 nlp = spacy.load("en_core_web_sm")
+
+
 class WhitespaceTokenizer:
     def __init__(self, vocab):
         self.vocab = vocab
@@ -11,6 +13,8 @@ class WhitespaceTokenizer:
     def __call__(self, text):
         words = text.split(" ")
         return Doc(self.vocab, words=words)
+
+
 nlp.tokenizer = WhitespaceTokenizer(nlp.vocab)
 
 spacyToConllMap = {
@@ -68,8 +72,10 @@ def train_hmm_model(output_desired):
     hmm_ner = hmm_model.train(train)
     return hmm_ner
 
+# task 0.1
 
-def grouping_of_entities(conll_data):
+
+def token_level_performance(conll_data):
     total_tokens = 0
     correctly_classified = 0
     for sentence in conll_data:
@@ -86,14 +92,14 @@ def grouping_of_entities(conll_data):
             part_of_speech_tag_array.append(part_of_speech_tag)
             chunck_tag_array.append(chunck_tag)
             named_entity_tag_array.append(named_entity_tag)
-        #doc = Doc(nlp.vocab, words=token_array)
         doc = nlp(" ".join(token_array))
         token_index = 0
         for token in doc:
             total_tokens += 1
             ent_type_converted_to_conll = token.ent_iob_
             if(spacyToConllMap[token.ent_type_] != ""):
-                ent_type_converted_to_conll += "-" + spacyToConllMap[token.ent_type_]
+                ent_type_converted_to_conll += "-" + \
+                    spacyToConllMap[token.ent_type_]
             if(ent_type_converted_to_conll == named_entity_tag_array[token_index]):
                 correctly_classified += 1
             token_index += 1
@@ -102,9 +108,84 @@ def grouping_of_entities(conll_data):
 
 
 conll_data = read_corpus_conll("./conll2003/test.txt")
-print(grouping_of_entities(conll_data))
+# print(token_level_performance(conll_data))
 
-"""doc = Doc(nlp.vocab, words=["Hi",",", "how", "are", "you","?"])
-doc = nlp(" ".join(["Hi",",", "how", "are", "you","?"]))
-for token in doc:
-    print(token.ent_type_, token.ent_iob_)"""
+# task 0.2
+def chunk_level_performance(conll_data):
+    effective_class_counts = {
+        "MISC": 0,
+        "ORG": 0,
+        "PER": 0,
+        "LOC": 0,
+    }
+    recognized_class_counts = {
+        "MISC": 0,
+        "ORG": 0,
+        "PER": 0,
+        "LOC": 0,
+    }
+    counter = 0
+    chunk_counter = 0
+    recognized_chunk_counter = 0
+    for sentence in conll_data:
+        token_array = []
+        part_of_speech_tag_array = []
+        chunck_tag_array = []
+        named_entity_tag_array = []
+        for element in sentence:
+            token = element[0].split()[0]
+            part_of_speech_tag = element[0].split()[1]
+            chunck_tag = element[0].split()[2]
+            named_entity_tag = element[0].split()[3]
+            token_array.append(token)
+            part_of_speech_tag_array.append(part_of_speech_tag)
+            chunck_tag_array.append(chunck_tag)
+            named_entity_tag_array.append(named_entity_tag)
+        doc = nlp(" ".join(token_array))
+        actual_chunks, actual_chunk_label_array, non_empty_chunks, current_effective_class_counts = get_chunks(token_array, named_entity_tag_array)
+        effective_class_counts["MISC"] += current_effective_class_counts["MISC"]
+        effective_class_counts["ORG"] += current_effective_class_counts["ORG"]
+        effective_class_counts["PER"] += current_effective_class_counts["PER"]
+        effective_class_counts["LOC"] += current_effective_class_counts["LOC"]
+        chunk_counter += non_empty_chunks
+        for ent in doc.ents:
+            if ent.text in actual_chunks:
+                recognized_chunk_counter += 1
+                actual_chunk_index = actual_chunks.index(ent.text)
+                if spacyToConllMap[ent.label_] == actual_chunk_label_array[actual_chunk_index]:
+                    recognized_class_counts[actual_chunk_label_array[actual_chunk_index]] += 1
+    return effective_class_counts, recognized_class_counts, chunk_counter, recognized_chunk_counter
+
+def get_chunks(token_array, named_entity_tag_array):
+    effective_class_counts = {
+        "MISC": 0,
+        "ORG": 0,
+        "PER": 0,
+        "LOC": 0,
+    }
+    chunk_array = []
+    chunk_label_array = []
+    current_chunk = ""
+    last_iob = ""
+    total_chunks = 0
+    for token_index, token in enumerate(token_array):
+        if named_entity_tag_array[token_index][0] == "B":
+            effective_class_counts[named_entity_tag_array[token_index][2:]] += 1
+            total_chunks += 1
+            chunk_label_array.append(named_entity_tag_array[token_index][2:])
+            if current_chunk != "":
+                chunk_array.append(current_chunk)
+            current_chunk = token
+        if named_entity_tag_array[token_index][0] == "I":
+            current_chunk += " " + token
+        last_iob = named_entity_tag_array[token_index][0]
+    chunk_array.append(current_chunk)
+    return chunk_array, chunk_label_array, total_chunks, effective_class_counts,
+
+
+effective_class_counts, recognized_class_counts, chunk_counter, recognized_chunk_counter = chunk_level_performance(conll_data)
+print("total chunk rateo:", (recognized_chunk_counter/chunk_counter))
+print("class MISC rateo:", recognized_class_counts["MISC"] / effective_class_counts["MISC"])
+print("class ORG rateo:", recognized_class_counts["ORG"] / effective_class_counts["ORG"])
+print("class PER rateo:", recognized_class_counts["PER"] / effective_class_counts["PER"])
+print("class LOC rateo:", recognized_class_counts["LOC"] / effective_class_counts["LOC"])
