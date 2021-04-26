@@ -4,7 +4,7 @@ from conll import read_corpus_conll
 from spacy.tokens import Doc
 
 nlp = spacy.load("en_core_web_sm")
-
+nlp_standard = spacy.load("en_core_web_sm")
 
 class WhitespaceTokenizer:
     def __init__(self, vocab):
@@ -183,9 +183,48 @@ def get_chunks(token_array, named_entity_tag_array):
     return chunk_array, chunk_label_array, total_chunks, effective_class_counts,
 
 
-effective_class_counts, recognized_class_counts, chunk_counter, recognized_chunk_counter = chunk_level_performance(conll_data)
+"""effective_class_counts, recognized_class_counts, chunk_counter, recognized_chunk_counter = chunk_level_performance(conll_data)
 print("total chunk rateo:", (recognized_chunk_counter/chunk_counter))
 print("class MISC rateo:", recognized_class_counts["MISC"] / effective_class_counts["MISC"])
 print("class ORG rateo:", recognized_class_counts["ORG"] / effective_class_counts["ORG"])
 print("class PER rateo:", recognized_class_counts["PER"] / effective_class_counts["PER"])
-print("class LOC rateo:", recognized_class_counts["LOC"] / effective_class_counts["LOC"])
+print("class LOC rateo:", recognized_class_counts["LOC"] / effective_class_counts["LOC"])"""
+
+
+# task 1
+def grouping_entities(sentence):
+    doc = nlp_standard(sentence)
+    ent_labels = [ent.label_ for ent in doc.ents]
+    token_index_of_ents = [ent[0].idx for ent in doc.ents]
+    named_entities_NP = []
+    for chunk_index, chunk in enumerate(doc.noun_chunks):
+        named_entities_NP.append([])
+        for ent_index, ent in enumerate(chunk.ents):
+            named_entities_NP[chunk_index].append(ent.label_)
+            token_index_of_ents[token_index_of_ents.index(ent[0].idx)] = -1
+
+    for token_of_ent_index, token_of_ent in enumerate(token_index_of_ents):
+        if(token_of_ent != -1):
+            named_entities_NP.append([ent_labels[token_of_ent_index]])
+
+    map_count = create_map(named_entities_NP)
+    return map_count
+
+def create_map(named_entities_NP):
+    grouped_label_map = {}
+    for named_entitity_NP in named_entities_NP:
+        label_of_group = ""
+        if len(named_entitity_NP) > 1:
+            for label_index, label in enumerate(named_entitity_NP):
+                label_of_group += label
+                if label_index != (len(named_entitity_NP) - 1):
+                    label_of_group += "-"
+        else:
+            label_of_group = named_entitity_NP[0]
+        if label_of_group in grouped_label_map:
+            grouped_label_map[label_of_group] += 1
+        else:
+            grouped_label_map[label_of_group] = 1
+    return grouped_label_map
+
+print(grouping_entities("Apple's Steve Jobs died in 2011 in Palo Alto, California."))
