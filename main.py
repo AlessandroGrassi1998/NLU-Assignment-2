@@ -74,8 +74,6 @@ def train_hmm_model(output_desired):
     return hmm_ner
 
 # task 0.1
-
-
 def token_level_performance(conll_data):
     total_tokens = 0
     correctly_classified = 0
@@ -107,10 +105,7 @@ def token_level_performance(conll_data):
     print(total_tokens, correctly_classified)
     return correctly_classified / total_tokens
 
-print()
-print("Task 0.1")
-conll_data = read_corpus_conll("./conll2003/test.txt")
-print(token_level_performance(conll_data))
+
 
 # task 0.2
 def chunk_level_performance(conll_data):
@@ -186,15 +181,6 @@ def get_chunks(token_array, named_entity_tag_array):
     chunk_array.append(current_chunk)
     return chunk_array, chunk_label_array, total_chunks, effective_class_counts,
 
-print()
-print("Task 0.2")
-effective_class_counts, recognized_class_counts, chunk_counter, recognized_chunk_counter = chunk_level_performance(conll_data)
-print("total chunk rateo:", (recognized_chunk_counter/chunk_counter))
-print("class MISC rateo:", recognized_class_counts["MISC"] / effective_class_counts["MISC"])
-print("class ORG rateo:", recognized_class_counts["ORG"] / effective_class_counts["ORG"])
-print("class PER rateo:", recognized_class_counts["PER"] / effective_class_counts["PER"])
-print("class LOC rateo:", recognized_class_counts["LOC"] / effective_class_counts["LOC"])
-
 
 # task 1
 def grouping_entities(sentence):
@@ -233,12 +219,9 @@ def create_map(named_entities_NP):
             grouped_label_map[label_of_group] = 1
     return grouped_label_map
 
-print()
-print("Task 1")
-print(grouping_entities("Apple's Steve Jobs died in 2011 in Palo Alto, California."))
 
 # task 2
-def expand_spans(sentence):
+def expand_entity_with_compound(sentence):
     doc = nlp_standard(sentence)
     ents = doc.ents
     idx_to_tokenindex_map = {}
@@ -258,7 +241,10 @@ def expand_spans(sentence):
                         token_ent_pair_array[idx_to_tokenindex_map[child.idx]] = (child.text, "I-" + token.ent_type_)
                     is_first_child = False
             if is_first:
-                token_ent_pair_array.append((token.text, token.ent_iob_ + "-" + token.ent_type_))
+                ent_iob_ = "O"
+                if token.ent_iob_ != "O":
+                    ent_iob_ = token.ent_iob_ + "-"
+                token_ent_pair_array.append((token.text, ent_iob_ + token.ent_type_))
             else:
                 token_ent_pair_array.append((token.text, "I-" + token.ent_type_))
         else:
@@ -269,6 +255,27 @@ def expand_spans(sentence):
                 token_ent_pair_array.append(())
     
     return token_ent_pair_array
+
+print()
+print("Task 0.1")
+conll_data = read_corpus_conll("./conll2003/test.txt")
+print("#_token_classifyied_correctly/#_of_tokens", token_level_performance(conll_data))
+
+print()
+print("Task 0.2")
+effective_class_counts, recognized_class_counts, chunk_counter, recognized_chunk_counter = chunk_level_performance(conll_data)
+print("total chunk rateo:", (recognized_chunk_counter/chunk_counter))
+print("class MISC rateo:", recognized_class_counts["MISC"] / effective_class_counts["MISC"])
+print("class ORG rateo:", recognized_class_counts["ORG"] / effective_class_counts["ORG"])
+print("class PER rateo:", recognized_class_counts["PER"] / effective_class_counts["PER"])
+print("class LOC rateo:", recognized_class_counts["LOC"] / effective_class_counts["LOC"])
+
+
+test_sentence = "Apple's Steve Jobs died in 2011 in Palo Alto, California."
+print()
+print("Task 1")
+print(grouping_entities(test_sentence))
+
 print()
 print("Task 2")
-print(expand_spans("Apple's Steve Jobs died in 2011 in Palo Alto, California."))
+print(expand_entity_with_compound(test_sentence))
