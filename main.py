@@ -6,6 +6,7 @@ from spacy.tokens import Doc
 nlp = spacy.load("en_core_web_sm")
 nlp_standard = spacy.load("en_core_web_sm")
 
+
 class WhitespaceTokenizer:
     def __init__(self, vocab):
         self.vocab = vocab
@@ -106,9 +107,10 @@ def token_level_performance(conll_data):
     print(total_tokens, correctly_classified)
     return correctly_classified / total_tokens
 
-
+print()
+print("Task 0.1")
 conll_data = read_corpus_conll("./conll2003/test.txt")
-# print(token_level_performance(conll_data))
+print(token_level_performance(conll_data))
 
 # task 0.2
 def chunk_level_performance(conll_data):
@@ -142,7 +144,8 @@ def chunk_level_performance(conll_data):
             chunck_tag_array.append(chunck_tag)
             named_entity_tag_array.append(named_entity_tag)
         doc = nlp(" ".join(token_array))
-        actual_chunks, actual_chunk_label_array, non_empty_chunks, current_effective_class_counts = get_chunks(token_array, named_entity_tag_array)
+        actual_chunks, actual_chunk_label_array, non_empty_chunks, current_effective_class_counts = get_chunks(
+            token_array, named_entity_tag_array)
         effective_class_counts["MISC"] += current_effective_class_counts["MISC"]
         effective_class_counts["ORG"] += current_effective_class_counts["ORG"]
         effective_class_counts["PER"] += current_effective_class_counts["PER"]
@@ -155,6 +158,7 @@ def chunk_level_performance(conll_data):
                 if spacyToConllMap[ent.label_] == actual_chunk_label_array[actual_chunk_index]:
                     recognized_class_counts[actual_chunk_label_array[actual_chunk_index]] += 1
     return effective_class_counts, recognized_class_counts, chunk_counter, recognized_chunk_counter
+
 
 def get_chunks(token_array, named_entity_tag_array):
     effective_class_counts = {
@@ -182,13 +186,14 @@ def get_chunks(token_array, named_entity_tag_array):
     chunk_array.append(current_chunk)
     return chunk_array, chunk_label_array, total_chunks, effective_class_counts,
 
-
-"""effective_class_counts, recognized_class_counts, chunk_counter, recognized_chunk_counter = chunk_level_performance(conll_data)
+print()
+print("Task 0.2")
+effective_class_counts, recognized_class_counts, chunk_counter, recognized_chunk_counter = chunk_level_performance(conll_data)
 print("total chunk rateo:", (recognized_chunk_counter/chunk_counter))
 print("class MISC rateo:", recognized_class_counts["MISC"] / effective_class_counts["MISC"])
 print("class ORG rateo:", recognized_class_counts["ORG"] / effective_class_counts["ORG"])
 print("class PER rateo:", recognized_class_counts["PER"] / effective_class_counts["PER"])
-print("class LOC rateo:", recognized_class_counts["LOC"] / effective_class_counts["LOC"])"""
+print("class LOC rateo:", recognized_class_counts["LOC"] / effective_class_counts["LOC"])
 
 
 # task 1
@@ -210,6 +215,7 @@ def grouping_entities(sentence):
     map_count = create_map(named_entities_NP)
     return map_count
 
+
 def create_map(named_entities_NP):
     grouped_label_map = {}
     for named_entitity_NP in named_entities_NP:
@@ -227,4 +233,42 @@ def create_map(named_entities_NP):
             grouped_label_map[label_of_group] = 1
     return grouped_label_map
 
+print()
+print("Task 1")
 print(grouping_entities("Apple's Steve Jobs died in 2011 in Palo Alto, California."))
+
+# task 2
+def expand_spans(sentence):
+    doc = nlp_standard(sentence)
+    ents = doc.ents
+    idx_to_tokenindex_map = {}
+    token_ent_pair_array= []
+    token_to_change = []
+    for token_index, token in enumerate(doc):
+        idx_to_tokenindex_map[token.idx] = token_index
+        if token.dep_ != "compound":
+            is_first = True
+            is_first_child = True
+            for child in token.children:
+                if child.dep_ == "compound" and child.idx < token.idx:
+                    is_first = False
+                    if is_first_child:
+                        token_ent_pair_array[idx_to_tokenindex_map[child.idx]] = (child.text, "B-" + token.ent_type_)
+                    else:
+                        token_ent_pair_array[idx_to_tokenindex_map[child.idx]] = (child.text, "I-" + token.ent_type_)
+                    is_first_child = False
+            if is_first:
+                token_ent_pair_array.append((token.text, token.ent_iob_ + "-" + token.ent_type_))
+            else:
+                token_ent_pair_array.append((token.text, "I-" + token.ent_type_))
+        else:
+            if token.head.idx < token.idx:
+                head_ent_type = token_ent_pair_array[idx_to_tokenindex_map[token.head.idx]][1][2:]
+                token_ent_pair_array.append((token.text, "I-" + head_ent_type))
+            else:
+                token_ent_pair_array.append(())
+    
+    return token_ent_pair_array
+print()
+print("Task 2")
+print(expand_spans("Apple's Steve Jobs died in 2011 in Palo Alto, California."))
