@@ -1,4 +1,3 @@
-import nltk.tag.hmm as hmm
 import spacy
 from conll import read_corpus_conll
 from spacy.tokens import Doc
@@ -50,28 +49,7 @@ spacyToConllMap = {
 }
 
 
-def train_hmm_model(output_desired):
-    outputs = ["part_of_speech_tag", "chunck_tag", "named_entity_tag"]
-    outputIndex = outputs.index(output_desired) + 1
-    if outputIndex == 0:
-        return False
-    train = [[]]
-    sentence_index = 0
-    with open('./conll2003/final_training.txt') as f:
-        for line in f:
-            if line == "\n":
-                sentence_index += 1
-                train.append([])
-            else:
-                line_splitted = line.split(" ")
-                used_tuple = (line_splitted[0],
-                              line_splitted[outputIndex].replace('\n', ''))
-                train[sentence_index].append(used_tuple)
 
-    hmm_model = hmm.HiddenMarkovModelTrainer()
-
-    hmm_ner = hmm_model.train(train)
-    return hmm_ner
 
 # task 0.1
 def token_level_performance(conll_data):
@@ -259,7 +237,7 @@ def expand_entity_with_compound(sentence):
 print()
 print("Task 0.1")
 conll_data = read_corpus_conll("./conll2003/test.txt")
-print("#_token_classifyied_correctly/#_of_tokens", token_level_performance(conll_data))
+print("#_token_classifyied_correctly/#_of_tokens:", token_level_performance(conll_data))
 
 print()
 print("Task 0.2")
