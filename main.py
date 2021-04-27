@@ -236,7 +236,7 @@ def expand_entity_with_compound(sentence):
 
 print()
 print("Task 0.1")
-conll_data = read_corpus_conll("./conll2003/final_training.txt")
+conll_data = read_corpus_conll("./conll2003/test.txt")
 print("#_token_classifyied_correctly/#_of_tokens:", token_level_performance(conll_data))
 
 print()
