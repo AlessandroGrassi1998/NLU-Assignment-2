@@ -17,7 +17,7 @@ class WhitespaceTokenizer:
 
 nlp.tokenizer = WhitespaceTokenizer(nlp.vocab)
 
-spacyToConllMap = {
+spacy_to_conll_map = {
     # https://github.com/explosion/spaCy/blob/master/spacy/glossary.py
     "PERSON": "PER",
     "NORP": "MISC",
@@ -74,9 +74,9 @@ def token_level_performance(conll_data):
         for token in doc:
             total_tokens += 1
             ent_type_converted_to_conll = token.ent_iob_
-            if(spacyToConllMap[token.ent_type_] != ""):
+            if(spacy_to_conll_map[token.ent_type_] != ""):
                 ent_type_converted_to_conll += "-" + \
-                    spacyToConllMap[token.ent_type_]
+                    spacy_to_conll_map[token.ent_type_]
             if(ent_type_converted_to_conll == named_entity_tag_array[token_index]):
                 correctly_classified += 1
             token_index += 1
@@ -128,7 +128,7 @@ def chunk_level_performance(conll_data):
             if ent.text in actual_chunks:
                 recognized_chunk_counter += 1
                 actual_chunk_index = actual_chunks.index(ent.text)
-                if spacyToConllMap[ent.label_] == actual_chunk_label_array[actual_chunk_index]:
+                if spacy_to_conll_map[ent.label_] == actual_chunk_label_array[actual_chunk_index]:
                     recognized_class_counts[actual_chunk_label_array[actual_chunk_index]] += 1
     return effective_class_counts, recognized_class_counts, chunk_counter, recognized_chunk_counter
 
@@ -236,7 +236,7 @@ def expand_entity_with_compound(sentence):
 
 print()
 print("Task 0.1")
-conll_data = read_corpus_conll("./conll2003/test.txt")
+conll_data = read_corpus_conll("./conll2003/final_training.txt")
 print("#_token_classifyied_correctly/#_of_tokens:", token_level_performance(conll_data))
 
 print()

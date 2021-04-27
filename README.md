@@ -27,7 +27,7 @@ python -m spacy download en_core_web_sm
 * Evaluate spaCy NER on CoNLL 2003 data (provided)
 For both of this tasks the following mapping has been done in order to convert spacy tags to conll tags
 ```python
-spacyToConllMap = {
+spacy_to_conll_map = {
     # https://github.com/explosion/spaCy/blob/master/spacy/glossary.py
     "PERSON": "PER",
     "NORP": "MISC",
